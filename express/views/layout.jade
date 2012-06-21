@@ -1,0 +1,118 @@
+!!!
+html
+  head
+    title= title
+    link(rel='stylesheet', href='//abandonedbase.com/static/vendor/bootstrap/css/bootstrap.min.css')
+    script(src='//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js')
+    script(src='//abandonedbase.com/static/vendor/bootstrap/js/bootstrap.min.js')
+    script(src='//abandonedbase.com/static/vendor/mustache/mustache.js')
+    script(src='//stream.abandonedbase.com/socket.io/socket.io.js')
+    script
+      var Stream = function(opts){
+        var self = this;
+        this.socket = io.connect('http://stream.abandonedbase.com:8001');
+        this.room = opts.room;
+        this.twitter = opts.twitter;
+        this.container_id = opts.container_id;
+        
+        this.on = function(name, func){
+          this.socket.on(name, func);
+        },
+
+        this.emit = function(name, data){
+          data.room = this.room;
+          this.socket.emit(name, data);
+        },
+
+        this.add = function(data){
+          data.room = this.room;
+          this.socket.emit('msg', data);
+        },
+        
+        this.strencode = function(data){
+          return unescape( encodeURIComponent( JSON.stringify( data ) ) );
+        },
+        
+        this.strdecode = function(data){
+          return JSON.parse( decodeURIComponent( escape ( data ) ) );
+        },
+        
+        this.subscribe = function(){
+          this.socket.emit('subscribe', { room: self.room, twitter: self.twitter });
+        },
+
+        this.render = function(data, func){
+          if (typeof func === 'undefined'){
+            func = 'prepend';
+          }
+          $('#'+this.container_id)[func](Mustache.to_html(self.template, data));
+        },
+        
+        this.init = function(){
+          this.subscribe();
+          this.socket.on('reconnect', function(){ self.subscribe() });
+          
+          this.socket.on('new msg', function(data){
+            self.render(self.strdecode(data), 'prepend');
+          });
+          
+          this.socket.on('init comment stream', function(data){
+            data = self.strdecode(data);
+            if (data && data.length > 0){
+              for(var i=0; i < data.length; i++){
+                self.render( JSON.parse(data[i]), 'append');
+              }
+            }
+          });
+          
+          this.socket.emit('init comment stream', { room: self.room, twitter: self.twitter });
+        }
+        
+      };
+    :less
+      .border-radius (@radius: 5px) {
+        border-radius: @radius;
+        -webkit-border-radius: @radius;
+        -moz-border-radius: @radius;
+      }
+      .box-shadow(@style, @c) when (iscolor(@c)) {
+        box-shadow:         @style @c;
+        -webkit-box-shadow: @style @c;
+        -moz-box-shadow:    @style @c;
+       }
+      .box-shadow(@style, @alpha: 50%) when (isnumber(@alpha)) {
+        .box-shadow(@style, rgba(0, 0, 0, @alpha));
+      }
+      .m-r-5 {
+        margin-right: 5px;
+      }
+      
+      .avatar {
+        width: 48px;
+        height: 48px;
+        .border-radius;
+        .box-shadow(0 0 5px, 30%)
+      }
+      .comment {
+        position: relative;
+        min-height: 51px;
+        padding: 9px 0px;
+      }
+      .comment .name {
+        color: blue;
+        font-weight: bold;
+      }
+      .comment .content {
+        margin-left: 58px;
+      }
+      .comment .avatar {	
+        position: absolute;
+        top: 12px;
+        left: 0px;
+      }
+      .comment .username {
+        color: #999;
+        font-size: 11px;
+        font-weight: bold;
+      }
+  body!= body

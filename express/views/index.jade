@@ -1,0 +1,59 @@
+script   
+  $(function(){
+    var socket = io.connect('http://stream.abandonedbase.com');
+    
+    socket.on('new msg', function(data) {
+      $("#" + data.room + " .msgs").append("<div><span class=name>" + data.name + "</span>: " + data.msg + "</div>");
+    });
+    
+    $('.nav-tabs').delegate('a', 'click', function (e) {
+      e.preventDefault();
+      $(this).tab('show');
+    });
+    
+    socket.on('connected', function(data){
+      $(".msgs").append("<div class=connected>" + data + "</div>");
+    });
+    
+    $('#form-add-room').submit(function(e){
+      e.preventDefault();
+      var room_name = $('#room-name').val();
+      $('#room-name').val('');
+      $('#room-tabs').append('<li><a href="#'+room_name+'">'+room_name+'</a>');
+      $('#rooms').append('<div id="' + room_name + '"class=tab-pane><div class=msgs></div></div>');
+    });
+    
+    $('#form-msg').submit(function(){
+      var msg = $('#msg').val();
+      var name = $('#name').val();
+      var room = $('.tab-content .active').attr('id');
+      if (!msg) {
+        msg = "said nothing";
+      }
+      if (!name){
+        name = 'Nobody'
+      }
+      $('#msg').val('');
+      socket.emit('msg', { name: name, msg: msg, room: room });
+      return false;
+    });
+  });
+div.container
+  h1= title
+  p Welcome to #{title}
+  ul.nav.nav-tabs#room-tabs
+    li.active: a(href='#home') Home
+  .well.row
+    .span6
+      form#form-msg.form-inline
+        fieldset
+          input#name.input-small.m-r-5(name='name', placeholder='Name')
+          input#msg.input-large.m-r-5(name='msg', placeholder='Message')
+          input#send-msg.btn.btn-primary(type='submit', value='Send')
+    .span5 
+      form#form-add-room.form-inline
+        input#room-name.input-small.m-r-5(name='room_name', placeholder='Room Name')
+        input.btn.btn-primary(type='submit', value='Add')
+  .tab-content#rooms
+    .tab-pane#home.active
+      .msgs

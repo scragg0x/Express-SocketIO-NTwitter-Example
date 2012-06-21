@@ -1,0 +1,42 @@
+script 
+  $(function(){
+  
+    var myStream = new Stream({ room: 'avengers', twitter: '#avengers', container_id: 'comments' });
+    
+    myStream.template = "<div class='comment'>" +
+                          "<div class='content'>" +
+                            "<img class='avatar' src='{{avatar}}' /><span class='name'>{{name}}</span> <span class='username'>{{username}}</span>" +
+                            "<div>{{text}}</div></div></div>";
+ 
+    myStream.init();
+    
+    $('#form-msg').submit(function(e){
+      e.preventDefault();
+      // Escape html
+      text = $('<div/>').text($('#msg').val()).html();
+      var name = $('#name').val();
+      if (!text) {
+        return;
+      }
+      $('#msg').val('');
+      myStream.add({ name: name, text: text });
+    });
+    
+  });
+  
+div.container
+  h1= title
+  p Welcome to #{title}
+  .well
+    .row
+      .span6
+        form#form-msg.form-inline
+          fieldset
+            input#name.input-small.m-r-5(name='name', placeholder='Name')
+            input#msg.input-large.m-r-5(name='text', placeholder='Message')
+            input#send-msg.btn.btn-primary(type='submit', value='Send')
+  .row
+    .tab-content#rooms.span8
+      #comments
+    .span4
+      #sockets
